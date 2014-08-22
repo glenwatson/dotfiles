@@ -31,7 +31,8 @@ alias path='echo -e ${PATH//:/\\n}'
 
 # Shortcuts
 alias e='vim' #edit
-alias f='find -regex ".*${1}.*"' #find
+alias f='find -regex ".*${1}.*"'
+alias g='git'
 alias h='history'
 alias j='jobs -l'
 alias p='less' #print
@@ -53,4 +54,3 @@ function parse_git_branch() {
 function parse_git_dirty() {
     [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "*"
 }
-
