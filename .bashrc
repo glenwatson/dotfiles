@@ -18,10 +18,23 @@ alias glna='git log --graph --abbrev-commit --decorate --date=relative --format=
 alias gl='glna --all'
 alias gla='gl'
 alias gls='git ls-files'
+function gf() {
+	git log --oneline --decorate --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
+}
 
 # =screen=
 alias sl='screen -list'
 alias sr='screen -r'
+function shelp() {
+	echo "^a ?	  help"
+	echo "^a S	  horizontal split"
+	echo "^a |	  verticle split"
+	echo "^a <tab>  next region"
+	echo "^a c	  new window"
+	echo "^a n	  next window"
+	echo "^a p	  prev window"
+	echo "^a X	  Close window"
+}
 
 # =misc=
 
@@ -67,10 +80,10 @@ PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
 
 # ==Functions==
 function parse_git_branch() {
-    git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1 /'
+	git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1 /'
 }
 function parse_git_dirty() {
-    [[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "*"
+	[[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "*"
 }
 function md() {
 	if [ $# != 1 ]; then
@@ -85,5 +98,8 @@ function what() {
 	fi
 	if [ $# == 4 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'external' ] && [ $4 == 'ip' ]; then
 		curl icanhazip.com
+	fi
+	if [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'name' ]; then
+		hostname
 	fi
 }
