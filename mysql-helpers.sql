@@ -1,4 +1,7 @@
-DROP PROCEDURE me.tf;
+CREATE SCHEMA IF NOT EXISTS me;
+
+-- tableFind
+DROP PROCEDURE IF EXISTS me.tf;
 DELIMITER //
 CREATE PROCEDURE me.tf (table_part VARCHAR(512)) BEGIN
 	SELECT table_schema, table_name FROM information_schema.tables WHERE table_name LIKE CONCAT('%', table_part, '%');
