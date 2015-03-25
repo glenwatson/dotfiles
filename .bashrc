@@ -1,4 +1,5 @@
 #!/bin/bash
+# ==alias autocomplete== http://ubuntuforums.org/showthread.php?t=733397
 # ==alias==
 # =git=
 alias ga='git add'
@@ -18,28 +19,40 @@ alias glna='git log --graph --abbrev-commit --decorate --date=relative --format=
 alias gl='glna --all'
 alias gla='gl'
 alias gls='git ls-files'
+alias gdf='git diff-tree --stat -R -B -C'
 function gf() {
 	git log --oneline --decorate --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
+}
+function gud() {
+	gst
+	gco $1
+	git pull origin $1
 }
 
 # =screen=
 alias sl='screen -list'
 alias sr='screen -r'
 function shelp() {
-	echo "^a ?	  help"
-	echo "^a S	  horizontal split"
-	echo "^a |	  verticle split"
+	echo "^a ?      help"
+	echo "^a S      horizontal split"
+	echo "^a |      verticle split"
 	echo "^a <tab>  next region"
-	echo "^a c	  new window"
-	echo "^a n	  next window"
-	echo "^a p	  prev window"
-	echo "^a X	  Close window"
+	echo "^a c      new window"
+	echo "^a n      next window"
+	echo "^a p      prev window"
+	echo "^a X      Close window"
+	echo "^u        Scrolls a half page up"
+	echo "^b        Scrolls a page up"
+	echo "^d        Scrolls a half page down"
+	echo "^f        Scrolls a page down"
 }
 
 # =misc=
 
-# process find
-alias pf='ps aux | grep'
+## process find
+##alias pf='ps aux | grep'
+#replaced by pgrep
+alias pf='echo "use pgrep"'
 # netstat find
 alias nf='netstat -tpna | grep'
 
@@ -48,6 +61,8 @@ alias mv='mv -i'
 
 # Pretty-print of some PATH variables:
 alias path='echo -e ${PATH//:/\\n}'
+
+alias fail='tail -f'
 
 # Shortcuts
 alias a='alias -p'
@@ -61,6 +76,14 @@ alias v='vim'
 function f() {
 	find . -regex ".*${1}.*"
 }
+# remove, tail
+function rail() {
+	set -e
+	rm  $1
+	touch $1
+	tail -f $1
+}
+
 function git_message_search() {
 	if [ $# -eq 1 ]; then
 		git log -1 :/${1}
@@ -69,12 +92,13 @@ function git_message_search() {
 	fi
 }
 
-# ==Override PS1==
+# =Override PS1==
 # https://wiki.archlinux.org/index.php/Color_Bash_Prompt
 # \e == \033   - escape
 # \[\e[X;YYm\] - start style
 # \[\e[00m\]   - reset style
-PS1='${debian_chroot:+($debian_chroot)}\[\033[01;33m\]$(parse_git_branch)\[\033[00m\]\[\033[01;34m\]\w\$\[\033[00m\] '
+# Colors can only be set in this string, not in any other
+PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
 #terminal title
 PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
 
@@ -83,8 +107,14 @@ function parse_git_branch() {
 	git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1 /'
 }
 function parse_git_dirty() {
-	[[ $(git status 2> /dev/null | tail -n1) != "nothing to commit (working directory clean)" ]] && echo "*"
+	[[ `git status --porcelain 2> /dev/null` ]] && echo "*"
 }
+# shows nothing on success, minus with the exit code # on failure
+function exit_code_status() {
+	EC=$?
+	[[ ${EC} == 0 ]] || echo "X $EC "
+}
+
 function md() {
 	if [ $# != 1 ]; then
 		echo "Usage: md <dir>"
@@ -95,11 +125,11 @@ function md() {
 function what() {
 	if [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'ip' ]; then
 		ifconfig eth0 | sed -e '/^\(eth0\| *[UTRcI]\)/d'
-	fi
-	if [ $# == 4 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'external' ] && [ $4 == 'ip' ]; then
+	elif [ $# == 4 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'external' ] && [ $4 == 'ip' ]; then
 		curl icanhazip.com
-	fi
-	if [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'name' ]; then
+	elif [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'name' ]; then
 		hostname
+	else
+		return 127
 	fi
 }
