@@ -20,10 +20,12 @@ alias gstl='git stash list'
 alias gsh='git show'
 alias gshst='git show stash@{0}' #What is at the top of my stash?
 alias glna='git log --graph --abbrev-commit --decorate --date=relative --format=format:"%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)"'
+alias gltime='git log --pretty=format:"%ad (%an) %cd (%cn) %h %s" --graph'
 alias gl='glna --all'
 alias gla='gl'
 alias gls='git ls-files'
 alias gdf='git diff-tree --stat -R -B -C'
+alias gn='git notes'
 function gf() {
 	git log --oneline --decorate --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
 }
@@ -31,6 +33,9 @@ function gud() {
 	gst
 	gco $1
 	git pull origin $1
+}
+function git_lines_contributed() {
+	git log --author="$1" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
 }
 
 # =screen=
@@ -81,7 +86,7 @@ function f() {
 	find . -regex ".*${1}.*"
 }
 # remove, tail
-function rail() {
+function frail() {
 	set -e
 	rm  $1
 	touch $1
@@ -105,6 +110,7 @@ function git_message_search() {
 PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
 #terminal title
 PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+REMOTE_PS1='\[\e[1;33m\]\u@\h\[\e[00m\] \[\e[1;34m\]\w$\[\e[00m\] '
 
 # ==Functions==
 function parse_git_branch() {
@@ -135,5 +141,15 @@ function what() {
 		hostname
 	else
 		return 127
+	fi
+}
+function compress-encrypt() {
+	if [[ -a $1 ]]; then
+		tar -czv $1 | gpg -c > $1.tar.gz.gpg
+	fi
+}
+function decrypt-decompress() {
+	if [[ -a $1 ]]; then
+		gpg -o - $1 | tar -xz
 	fi
 }
