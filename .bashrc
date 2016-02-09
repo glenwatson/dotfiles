@@ -7,25 +7,42 @@ alias ..='cd ..'
 alias ...='cd ../..'
 # =git=
 alias ga='git add'
+__git_complete ga _git_add
 alias gb='git branch'
+__git_complete gb _git_branch
 alias gco='git checkout'
+__git_complete gco _git_checkout
 alias gc='git commit'
+__git_complete gc _git_commit
 alias gd='git diff'
+__git_complete gd _git_diff
 alias gdw='git diff --color-words'
+__git_complete gdw _git_diff
 alias gdc='git diff --cached'
+__git_complete gdc _git_diff
 alias gdcw='git diff --cached --color-words'
+__git_complete gdcw _git_diff
 alias gs='git status'
 alias gst='git stash'
+__git_complete gst _git_stash
 alias gstl='git stash list'
+__git_complete gstl _git_stash
 alias gsh='git show'
+__git_complete gsh _git_show
 alias gshst='git show stash@{0}' #What is at the top of my stash?
 alias glna='git log --graph --abbrev-commit --decorate --date=relative --format=format:"%C(bold blue)%h%C(reset) - %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an (%cn)%C(reset)%C(bold yellow)%d%C(reset)"'
+__git_complete glna _git_log
 alias gltime='git log --pretty=format:"%ad (%an) %cd (%cn) %h %s" --graph'
+__git_complete gltime _git_log
 alias gl='glna --all'
+__git_complete gl _git_log
 alias gla='gl'
+__git_complete gla _git_log
 alias gls='git ls-files'
+__git_complete gls _git_ls_files
 alias gdf='git diff-tree --stat -R -B -C'
 alias gn='git notes'
+__git_complete gn _git_notes
 alias cdgit='cd $(git rev-parse --show-toplevel)'
 function gf() {
 	git log --oneline --decorate --all --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
@@ -146,6 +163,7 @@ alias fail='tail -f'
 alias a='alias -p'
 alias e='vim' #edit
 alias g='git'
+__git_complete g _git
 alias h='history'
 alias j='jobs -l'
 alias p='less' #print
