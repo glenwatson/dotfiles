@@ -54,6 +54,58 @@ function git_fake_date() {
 	export GIT_COMMITTER_DATE="$NEWDATE"
 }
 
+
+# =push/pop branch=
+function pushb() {
+	new_branch=$1
+	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	if [[ -z "$git_dir" ]]; then
+	    echo "You are not in a git repo!"
+	    return 1
+	fi
+	if [[ -z "$new_branch" ]]; then
+		echo "You must pass in a branch name"
+		return 2
+	fi
+	stack_file=$git_dir/.stack.txt
+	# read current branch
+	old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+	# if we are already on that branch
+	if [[ "$old_branch" == "$new_branch" ]]; then
+		return 0
+	fi
+	# save branch to top of stack
+	echo $old_branch >> $stack_file
+	# output current stack
+	print_branch_stack
+	# move to the new branch
+	git checkout $new_branch
+}
+function popb() {
+	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	if [[ -z "$git_dir" ]]; then
+    	echo "You are not in a git repo!"
+	    return 1
+	fi
+	stack_file=$git_dir/.stack.txt
+	if [[ ! -f $stack_file || ! -s $stack_file ]]; then
+	    echo "There are no branches to pop!"
+	    return 2
+	fi
+	# get the branch at the top of the stack
+	branch_name=$(tail -n1 $stack_file)
+	# remove the top of the stack
+	sed -i '$ d' $stack_file
+	# output current stack
+	print_branch_stack
+	# move to the branch that was on the top of the stack
+	git checkout $branch_name
+}
+function print_branch_stack() {
+	sed ':a;N;$!ba;s/\n/ /g' $stack_file
+}
+
+
 # =screen=
 alias sl='screen -list'
 alias sr='screen -r'
@@ -74,10 +126,11 @@ function shelp() {
 
 # =misc=
 
-## process find
+# process find
 ##alias pf='ps aux | grep'
 #replaced by pgrep
-alias pf='echo "use pgrep"'
+alias pf='echo "use pgrep -f"'
+
 # netstat find
 alias nf='netstat -tpna | grep'
 
@@ -121,6 +174,17 @@ function git_message_search() {
 	fi
 }
 
+function git_params() {
+	sb=''
+	while read x; do 
+		sb="$sb $(echo $x | sed s/#\\s*//)";
+	done
+	echo $sb
+}
+function gitrm() {
+	echo "You probably meant git_params()"
+}
+
 # Checks to see if you are SSH'd into a machine
 function is_remote_machine() {
 	[ -n "$SSH_CLIENT" ]
@@ -161,6 +225,9 @@ if is_remote_machine || is_sudoed; then
 fi
 
 # ==Functions==
+function cdg() {
+	cd $(git rev-parse --show-toplevel)
+}
 function md() {
 	if [ $# != 1 ]; then
 		echo "Usage: md <dir>"
