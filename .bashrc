@@ -85,8 +85,8 @@ function pushb() {
 		return 2
 	fi
 	stack_file=$git_dir/.stack.txt
-	# read current branch
-	old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/')
+	# read current branch                      current branch   remove *            Get hash if not on branch
+	old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' -e 's/(HEAD detached at \([0-9a-f]\+\))/\1/')
 	# if we are already on that branch
 	if [[ "$old_branch" == "$new_branch" ]]; then
 		return 0
