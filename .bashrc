@@ -83,8 +83,8 @@ function git_fake_reset() {
 # =push/pop branch=
 # http://www.gnu.org/software/bash/manual/html_node/Directory-Stack-Builtins.html#Directory-Stack-Builtins
 function pushb() {
-	new_branch=$1
-	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	local new_branch=$1
+	local git_dir=$(git rev-parse --git-dir 2> /dev/null)
 	if [[ -z "$git_dir" ]]; then
 	    echo "You are not in a git repo!"
 	    return 1
@@ -93,16 +93,16 @@ function pushb() {
 		echo "You must pass in a branch name"
 		return 2
 	fi
-	stack_file=$git_dir/.stack.txt
+	local stack_file=$git_dir/.stack.txt
 	# read current branch                      current branch   remove *            Get hash if not on branch
-	old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' -e 's/(HEAD detached at \([0-9a-f]\+\))/\1/')
+	local old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' -e 's/(HEAD detached at \([0-9a-f]\+\))/\1/')
 	# if we are already on that branch
 	if [[ "$old_branch" == "$new_branch" ]]; then
 		return 0
 	fi
 	# move to the new branch
 	git checkout $new_branch
-	retval=$?
+	local retval=$?
 	if [[ $retval -ne 0 ]]; then
 		return $retval
 	fi
@@ -112,21 +112,21 @@ function pushb() {
 	print_branch_stack
 }
 function popb() {
-	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	local git_dir=$(git rev-parse --git-dir 2> /dev/null)
 	if [[ -z "$git_dir" ]]; then
     	echo "You are not in a git repo!"
 	    return 1
 	fi
-	stack_file=$git_dir/.stack.txt
+	local stack_file=$git_dir/.stack.txt
 	if [[ ! -f $stack_file || ! -s $stack_file ]]; then
 	    echo "There are no branches to pop!"
 	    return 2
 	fi
 	# get the branch at the top of the stack
-	branch_name=$(tail -n1 $stack_file)
+	local branch_name=$(tail -n1 $stack_file)
 	# move to the branch that was on the top of the stack
 	git checkout $branch_name
-	retval=$?
+	local retval=$?
 	if [[ $retval -ne 0 ]]; then
 		return $retval
 	fi
@@ -136,12 +136,12 @@ function popb() {
 	print_branch_stack
 }
 function print_branch_stack() {
-	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	local git_dir=$(git rev-parse --git-dir 2> /dev/null)
 	if [[ -z "$git_dir" ]]; then
 		echo "You are not in a git repo!"
 		return 1
 	fi
-	stack_file=$git_dir/.stack.txt
+	local stack_file=$git_dir/.stack.txt
 	if [[ ! -f "$stack_file" ]]; then
 		# echo "The stack is empty"
 		return 0
@@ -223,7 +223,7 @@ function git_message_search() {
 }
 
 function git_params() {
-	sb=''
+	local sb=''
 	while read x; do 
 		sb="$sb $(echo $x | sed s/#\\s*//)";
 	done
@@ -255,7 +255,7 @@ function parse_git_dirty() {
 }
 # shows nothing on success, minus with the exit code # on failure
 function exit_code_status() {
-	EC=$?
+	local EC=$?
 	[[ ${EC} == 0 ]] || echo "X $EC "
 }
 # =Override PS1==
@@ -284,17 +284,17 @@ function md() {
 	fi
 }
 function mem() {
-	TOTAL_KB=$(grep MemTotal: /proc/meminfo | cut -d\  -f 8)
-	FREE_KB=$(grep MemFree: /proc/meminfo | cut -d\  -f 9)
-	USED_KB=$(awk "BEGIN { print $TOTAL_KB - $FREE_KB }")
+	local TOTAL_KB=$(grep MemTotal: /proc/meminfo | cut -d\  -f 8)
+	local FREE_KB=$(grep MemFree: /proc/meminfo | cut -d\  -f 9)
+	local USED_KB=$(awk "BEGIN { print $TOTAL_KB - $FREE_KB }")
 	awk "BEGIN { print ($USED_KB / $TOTAL_KB) * 100 \"%\"}"
 	awk "BEGIN { print $USED_KB / (1024*1024) \"(GB) out of \" $TOTAL_KB / (1024*1024) \"(GB)\" }"
 	awk "BEGIN { print $USED_KB / 1024 \"(MB) out of \" $TOTAL_KB / 1024 \"(MB)\" }"
 	awk "BEGIN { print $USED_KB \"(KB) out of \" $TOTAL_KB \"(KB)\" }"
 }
 function swap() {
-	TOTAL_KB=$(grep /dev /proc/swaps | cut -f 2)
-	USED_KB=$(grep /dev /proc/swaps | cut -f 3)
+	local TOTAL_KB=$(grep /dev /proc/swaps | cut -f 2)
+	local USED_KB=$(grep /dev /proc/swaps | cut -f 3)
 	awk "BEGIN { print ($USED_KB / $TOTAL_KB) * 100 \"%\"}"
 	awk "BEGIN { print $USED_KB / (1024*1024) \"(GB) out of \" $TOTAL_KB / (1024*1024) \"(GB)\" }"
 	awk "BEGIN { print $USED_KB / 1024 \"(MB) out of \" $TOTAL_KB / 1024 \"(MB)\" }"
