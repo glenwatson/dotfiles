@@ -70,9 +70,18 @@ function git_fake_date() {
 	export GIT_AUTHOR_DATE="$NEWDATE"
 	export GIT_COMMITTER_DATE="$NEWDATE"
 }
+function git_fake_reset() {
+	unset GIT_AUTHOR_NAME
+	unset GIT_AUTHOR_EMAIL
+	unset GIT_COMMITTER_NAME
+	unset GIT_COMMITTER_EMAIL
+	unset GIT_AUTHOR_DATE
+	unset GIT_COMMITTER_DATE
+}
 
 
 # =push/pop branch=
+# http://www.gnu.org/software/bash/manual/html_node/Directory-Stack-Builtins.html#Directory-Stack-Builtins
 function pushb() {
 	new_branch=$1
 	git_dir=$(git rev-parse --git-dir 2> /dev/null)
@@ -91,12 +100,16 @@ function pushb() {
 	if [[ "$old_branch" == "$new_branch" ]]; then
 		return 0
 	fi
+	# move to the new branch
+	git checkout $new_branch
+	retval=$?
+	if [[ $retval -ne 0 ]]; then
+		return $retval
+	fi
 	# save branch to top of stack
 	echo $old_branch >> $stack_file
 	# output current stack
 	print_branch_stack
-	# move to the new branch
-	git checkout $new_branch
 }
 function popb() {
 	git_dir=$(git rev-parse --git-dir 2> /dev/null)
@@ -111,16 +124,31 @@ function popb() {
 	fi
 	# get the branch at the top of the stack
 	branch_name=$(tail -n1 $stack_file)
+	# move to the branch that was on the top of the stack
+	git checkout $branch_name
+	retval=$?
+	if [[ $retval -ne 0 ]]; then
+		return $retval
+	fi
 	# remove the top of the stack
 	sed -i '$ d' $stack_file
 	# output current stack
 	print_branch_stack
-	# move to the branch that was on the top of the stack
-	git checkout $branch_name
 }
 function print_branch_stack() {
+	git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	if [[ -z "$git_dir" ]]; then
+		echo "You are not in a git repo!"
+		return 1
+	fi
+	stack_file=$git_dir/.stack.txt
+	if [[ ! -f "$stack_file" ]]; then
+		# echo "The stack is empty"
+		return 0
+	fi
 	sed ':a;N;$!ba;s/\n/ /g' $stack_file
 }
+alias branches=print_branch_stack
 
 
 # =screen=
@@ -179,7 +207,9 @@ function fi() {
 }
 # remove, tail
 function frail() {
-	rm  $1
+	if [ -f "$1" ]; then
+		rm  $1
+	fi
 	touch $1
 	tail -f $1
 }
@@ -255,7 +285,7 @@ function md() {
 }
 function mem() {
 	TOTAL_KB=$(grep MemTotal: /proc/meminfo | cut -d\  -f 8)
-	FREE_KB=$(grep MemFree: /proc/meminfo | cut -d\  -f 10)
+	FREE_KB=$(grep MemFree: /proc/meminfo | cut -d\  -f 9)
 	USED_KB=$(awk "BEGIN { print $TOTAL_KB - $FREE_KB }")
 	awk "BEGIN { print ($USED_KB / $TOTAL_KB) * 100 \"%\"}"
 	awk "BEGIN { print $USED_KB / (1024*1024) \"(GB) out of \" $TOTAL_KB / (1024*1024) \"(GB)\" }"
