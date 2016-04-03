@@ -199,7 +199,7 @@ alias t='tail -fn0'
 alias v='vim'
 # find file name
 function f() {
-	find . -regex ".*${1}.*"
+	find . -iregex ".*${1}.*"
 }
 # find inside files
 function fi() {
