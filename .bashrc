@@ -45,12 +45,16 @@ alias gn='git notes'
 __git_complete gn _git_notes
 alias cdgit='cd $(git rev-parse --show-toplevel)'
 function gf() {
-	git log --oneline --decorate --all --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
+	#git log --oneline --decorate --all --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
+	git log --oneline --decorate --grep="${1}"
 }
 function gud() {
 	gst
 	gco $1
 	git pull origin $1
+}
+function gshno() {
+	gsh --name-only $1
 }
 function git_lines_contributed() {
 	git log --author="$1" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
@@ -199,7 +203,7 @@ alias t='tail -fn0'
 alias v='vim'
 # find file name
 function f() {
-	find . -iregex ".*${1}.*"
+	find . -regex ".*${1}.*"
 }
 # find inside files
 function fi() {
@@ -320,4 +324,14 @@ function decrypt-decompress() {
 	if [[ -a $1 ]]; then
 		gpg -o - $1 | tar -xz
 	fi
+}
+function beer() {
+	if [ "$(id -u)" != "0" ]; then
+		echo "Sorry, you are not root."
+		return 1
+	fi
+	echo -e " =\n/ \\\\\n) (\n[_]\nroot beer, get it?\n"
+}
+function group_by() {
+	awk -F_ '{A[$1$2]++}END{for (i in A) print i,A[i]}'
 }
