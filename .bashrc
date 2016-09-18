@@ -315,12 +315,12 @@ function what() {
 		return 127
 	fi
 }
-function compress-encrypt() {
+function compress_encrypt() {
 	if [[ -a $1 ]]; then
 		tar -czv $1 | gpg -c > $1.tar.gz.gpg
 	fi
 }
-function decrypt-decompress() {
+function decrypt_decompress() {
 	if [[ -a $1 ]]; then
 		gpg -o - $1 | tar -xz
 	fi
