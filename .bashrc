@@ -6,6 +6,9 @@ alias cd..="cd .." # I often make this mistake
 alias ..='cd ..'
 alias ...='cd ../..'
 # =git=
+# __git_complete broke :(
+function __git_complete() { :
+}
 alias ga='git add'
 __git_complete ga _git_add
 alias gb='git branch'
@@ -199,7 +202,7 @@ __git_complete g _git
 alias h='history'
 alias j='jobs -l'
 alias p='less' #print
-alias t='tail -fn0'
+alias t='less +G' # tail
 alias v='vim'
 # find file name
 function f() {
@@ -218,6 +221,7 @@ function frail() {
 	tail -f $1
 }
 
+# Searches git commit messages
 function git_message_search() {
 	if [ $# -eq 1 ]; then
 		git log -1 :/${1}
@@ -226,10 +230,14 @@ function git_message_search() {
 	fi
 }
 
+# Allows you to paste output from git status to get the list of files
+# Most often used when git rm'ing lots of files
 function git_params() {
+	# string builder
 	local sb=''
-	while read x; do 
-		sb="$sb $(echo $x | sed s/#\\s*//)";
+	while read x; do
+		# http://stackoverflow.com/a/12426715
+		sb="$sb ${x##* }"
 	done
 	echo $sb
 }
@@ -251,11 +259,11 @@ function add_time() {
 }
 alias add_datetime="add_time"
 
-function parse_git_branch() {
+function parse_git_branch_ps1() {
 	git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1 /'
 }
 function parse_git_dirty() {
-	[[ `git status --porcelain 2> /dev/null` ]] && echo "*"
+	[[ `git status --porcelain 2> /dev/null` ]] && echo "* "
 }
 # shows nothing on success, minus with the exit code # on failure
 function exit_code_status() {
@@ -268,13 +276,18 @@ function exit_code_status() {
 # \[\e[X;YYm\] - start style
 # \[\e[00m\]   - reset style
 # Colors can only be set in this string, not in any other
-PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
+#Not being in a git directory is causing the "parse_get_branch" to lag which is causing the entrie terminal to lag
+#PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch_ps2)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
+# To set human readable date: date -d @1479417119
+PS1='\[\e[1;31m\]$(exit_code_status)\[\e[01;33m\]$(parse_git_dirty)$(parse_git_branch_ps1)\[\e[02;37m\]$(date +%s) \[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;34m\]\w\$\[\e[00m\] '
 #terminal title
 PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
 #ssh user@host
 if is_remote_machine || is_sudoed; then
 	PS1="\[\e[1;33m\]\u@\h\[\e[00m\] $PS1"
 fi
+
+export EDITOR='vim'
 
 # ==Functions==
 function cdg() {
@@ -287,26 +300,27 @@ function md() {
 		mkdir -p $1 && cd $1
 	fi
 }
+# displays amount of used RAM and swap
+#http://stackoverflow.com/questions/10585978/linux-command-for-percentage-of-memory-that-is-free
 function mem() {
-	local TOTAL_KB=$(grep MemTotal: /proc/meminfo | cut -d\  -f 8)
-	local FREE_KB=$(grep MemFree: /proc/meminfo | cut -d\  -f 9)
-	local USED_KB=$(awk "BEGIN { print $TOTAL_KB - $FREE_KB }")
-	awk "BEGIN { print ($USED_KB / $TOTAL_KB) * 100 \"%\"}"
-	awk "BEGIN { print $USED_KB / (1024*1024) \"(GB) out of \" $TOTAL_KB / (1024*1024) \"(GB)\" }"
-	awk "BEGIN { print $USED_KB / 1024 \"(MB) out of \" $TOTAL_KB / 1024 \"(MB)\" }"
-	awk "BEGIN { print $USED_KB \"(KB) out of \" $TOTAL_KB \"(KB)\" }"
+        # +/-OS refers to what the Operating System is using for it's own caches (e.g. like disk cache) linuxatemyram.com
+        free | grep Mem | awk '{ printf("used(+OS): %.4f%\n", $3/$2 * 100.0) }'
+        free | head -n 3 | tail -n 1 | awk '{ printf("used(-OS): %.4f%\n", $3/($3+$4) * 100) }'
 }
 function swap() {
-	local TOTAL_KB=$(grep /dev /proc/swaps | cut -f 2)
-	local USED_KB=$(grep /dev /proc/swaps | cut -f 3)
-	awk "BEGIN { print ($USED_KB / $TOTAL_KB) * 100 \"%\"}"
-	awk "BEGIN { print $USED_KB / (1024*1024) \"(GB) out of \" $TOTAL_KB / (1024*1024) \"(GB)\" }"
-	awk "BEGIN { print $USED_KB / 1024 \"(MB) out of \" $TOTAL_KB / 1024 \"(MB)\" }"
-	awk "BEGIN { print $USED_KB \"(KB) out of \" $TOTAL_KB \"(KB)\" }"
+	free | grep Swap | awk '{ printf("used: %.4f%\n", $3/$2 * 100.0) }'
+}
+function swap-processes() {
+  {
+    for file in /proc/*/status; do
+      awk '/^Pid|Name|VmSwap/{printf $2 " " $3}END{print ""}' $file;
+    done | sort -k 3 -n
+    echo "COMMAND PID SIZE kB"
+  } | column -t
 }
 function what() {
 	if [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'ip' ]; then
-		ifconfig eth0 | sed -e '/^\(eth0\| *[UTRcI]\)/d'
+		ifconfig | sed -e '/^\(em1\| *[UTRcI]\)/d'
 	elif [ $# == 4 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'external' ] && [ $4 == 'ip' ]; then
 		curl icanhazip.com
 	elif [ $# == 3 ] && [ $1 == 'is' ] && [ $2 == 'my' ] && [ $3 == 'name' ]; then
@@ -315,12 +329,12 @@ function what() {
 		return 127
 	fi
 }
-function compress_encrypt() {
+function compress-encrypt() {
 	if [[ -a $1 ]]; then
 		tar -czv $1 | gpg -c > $1.tar.gz.gpg
 	fi
 }
-function decrypt_decompress() {
+function decrypt-decompress() {
 	if [[ -a $1 ]]; then
 		gpg -o - $1 | tar -xz
 	fi
@@ -335,3 +349,26 @@ function beer() {
 function group_by() {
 	awk -F_ '{A[$1$2]++}END{for (i in A) print i,A[i]}'
 }
+# Can just use <command> && exit
+function 0exit() {
+  if [[ "$?" -eq "0" ]]; then
+    exit
+  else
+    alert "Not exiting: $?"
+  fi;
+}
+function alertfail() {
+  if [[ "$?" -ne "0" ]]; then
+    alert "Failed: $?"
+  fi;
+}
+
+# Prints the command that started the given process id
+function cmdline() {
+  cat /proc/$1/cmdline | strings -1
+}
+
+# https://github.com/andreafrancia/trash-cli/
+if type trash-put &> /dev/null; then
+  alias rm='echo "Use trash-put instead! (perma-delete with \rm or /bin/rm)"; false'
+fi
