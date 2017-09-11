@@ -231,7 +231,7 @@ function git_message_search() {
 }
 
 # Allows you to paste output from git status to get the list of files
-# Most often used when git rm'ing lots of files
+# Most often used when git rm'ing lots of *.orig files (see gr)
 function git_params() {
 	# string builder
 	local sb=''
@@ -244,7 +244,20 @@ function git_params() {
 function gitrm() {
 	echo "You probably meant git_params()"
 }
+# Removes files pasted from `git status`
+function gr() {
+  echo " Try: git clean -i"
+}
 
+# =Override PS1==
+# https://wiki.archlinux.org/index.php/Color_Bash_Prompt
+# \e == \033   - escape
+# \[\e[X;YYm\] - start style
+# \[\e[00m\]   - reset style
+# Colors can only be set in this string, not in any other
+#Not being in a git directory is causing the "parse_get_branch" to lag which is causing the entrie terminal to lag
+#PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch_ps2)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
+# To set human readable date: date -d @1479417119
 # Checks to see if you are SSH'd into a machine
 function is_remote_machine() {
 	[ -n "$SSH_CLIENT" ]
@@ -270,23 +283,33 @@ function exit_code_status() {
 	local EC=$?
 	[[ ${EC} == 0 ]] || echo "X $EC "
 }
-# =Override PS1==
-# https://wiki.archlinux.org/index.php/Color_Bash_Prompt
-# \e == \033   - escape
-# \[\e[X;YYm\] - start style
-# \[\e[00m\]   - reset style
-# Colors can only be set in this string, not in any other
-#Not being in a git directory is causing the "parse_get_branch" to lag which is causing the entrie terminal to lag
-#PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch_ps2)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
-# To set human readable date: date -d @1479417119
-PS1='\[\e[1;31m\]$(exit_code_status)\[\e[01;33m\]$(parse_git_dirty)$(parse_git_branch_ps1)\[\e[02;37m\]$(date +%s) \[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;34m\]\w\$\[\e[00m\] '
-#terminal title
-PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
-#ssh user@host
-if is_remote_machine || is_sudoed; then
-	PS1="\[\e[1;33m\]\u@\h\[\e[00m\] $PS1"
-fi
+# hooks
+function hook_before_ps1() {
+  : #noop
+}
+function hook_after_ps1() {
+  : #noop
+}
 
+PROMPT_COMMAND=__prompt_command
+function __prompt_command() {
+  PS1=$(exit_code_status)
+  local Reset='\[\e[00m\]'
+  local RedBold='\[\e[1;31m\]'
+  local Yellow='\[\e[01;33m\]'
+  local WhiteBold='\[\e[02;37m\]'
+  local LightBlue='\[\e[01;34m\]'
+
+  PS1="${RedBold}$PS1${Reset}$(hook_before_ps1)${Yellow}$(parse_git_dirty)$(parse_git_branch_ps1)${WhiteBold}$(date +%s) ${Reset}${debian_chroot:+($debian_chroot)}$(hook_after_ps1)${LightBlue}\w\$${Reset} "
+
+  #terminal title
+  PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+
+  #ssh user@host
+  if is_remote_machine || is_sudoed; then
+    PS1="\[\e[1;33m\]\u@\h\[\e[00m\] $PS1"
+  fi
+}
 export EDITOR='vim'
 
 # ==Functions==
