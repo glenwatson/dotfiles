@@ -47,6 +47,9 @@ alias gdf='git diff-tree --stat -R -B -C'
 alias gn='git notes'
 __git_complete gn _git_notes
 alias cdgit='cd $(git rev-parse --show-toplevel)'
+# Git Diff Head. Show the difference between HEAD and when the current branch was created off of master.
+# NOTE: Only works when you branched from master (one way or another)
+alias gdh='git diff $(git merge-base master HEAD) HEAD'
 function gf() {
 	#git log --oneline --decorate --all --format=format:"%C(bold blue)%h%C(reset) %C(bold green)(%ar)%C(reset) %C(white)%s%C(reset) %C(dim white)- %an%C(reset)%C(bold yellow)%d%C(reset)" | grep ${1}
 	git log --oneline --decorate --grep="${1}"
@@ -258,6 +261,7 @@ function gr() {
 #Not being in a git directory is causing the "parse_get_branch" to lag which is causing the entrie terminal to lag
 #PS1='\[\e[1;31m\]$(exit_code_status)\[\e[00m\]${debian_chroot:+($debian_chroot)}\[\e[01;33m\]$(parse_git_branch_ps2)\[\e[00m\]\[\e[01;34m\]\w\$\[\e[00m\] '
 # To set human readable date: date -d @1479417119
+
 # Checks to see if you are SSH'd into a machine
 function is_remote_machine() {
 	[ -n "$SSH_CLIENT" ]
@@ -291,6 +295,10 @@ function hook_after_ps1() {
   : #noop
 }
 
+function hook_terminal_title_ps1(){
+  echo '\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]'
+}
+
 PROMPT_COMMAND=__prompt_command
 function __prompt_command() {
   PS1=$(exit_code_status)
@@ -303,13 +311,14 @@ function __prompt_command() {
   PS1="${RedBold}$PS1${Reset}$(hook_before_ps1)${Yellow}$(parse_git_dirty)$(parse_git_branch_ps1)${WhiteBold}$(date +%s) ${Reset}${debian_chroot:+($debian_chroot)}$(hook_after_ps1)${LightBlue}\w\$${Reset} "
 
   #terminal title
-  PS1="\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]$PS1"
+  PS1="$(hook_terminal_title_ps1)$PS1"
 
   #ssh user@host
-  if is_remote_machine || is_sudoed; then
+  if is_sudoed; then
     PS1="\[\e[1;33m\]\u@\h\[\e[00m\] $PS1"
   fi
 }
+
 export EDITOR='vim'
 
 # ==Functions==
@@ -388,7 +397,47 @@ function alertfail() {
 
 # Prints the command that started the given process id
 function cmdline() {
-  cat /proc/$1/cmdline | strings -1
+  cat /proc/$1/cmdline | strings -1 | less -X -F
+}
+
+function countdown() {
+  secs=$1
+  while [ $secs -gt 0 ]; do
+     echo -ne "$secs\033[0K\r"
+     sleep 1
+     : $((secs--))
+  done
+}
+
+function countdown2() {
+  remaining_secs=$1
+  current_secs=$(date +%s)
+  trigger_secs=$(expr $remaining_secs + $current_secs - 1)
+  while [ $remaining_secs -gt 0 ]; do
+    echo -ne "$remaining_secs\033[0K\r"
+    sleep 1
+    remaining_secs=$(expr $trigger_secs - $current_secs)
+    current_secs=$(date +%s)
+  done
+}
+
+function displaytime() {
+  SECONDS=$1
+  if [[ "$SECONDS" -gt "86400" ]]; then
+    echo "Number of seconds is greater than 1 day!"
+    return 1
+  fi
+  date -ud "@$SECONDS" +'%H hours %M minutes %S seconds'
+}
+
+function timer() {
+secs=$1
+  while [ $secs -gt 0 ]; do
+     formatted=$(displaytime $secs)
+     echo -ne "$formatted\033[0K\r"
+     sleep 1
+     : $((secs--))
+  done
 }
 
 # https://github.com/andreafrancia/trash-cli/
