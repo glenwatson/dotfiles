@@ -1,6 +1,7 @@
 #!/bin/bash
 # ==alias autocomplete== http://ubuntuforums.org/showthread.php?t=733397
 # ==alias==
+alias ll="ls -al"
 alias cd..="cd .." # I often make this mistake
 # Because sometimes you don't have the time to put this two letters
 alias ..='cd ..'
