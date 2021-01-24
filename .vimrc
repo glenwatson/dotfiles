@@ -13,9 +13,6 @@
 " Enable modern Vim features not compatible with Vi spec.
 set nocompatible
 
-" Use the 'google' package by default (see http://go/vim/packages).
-source /usr/share/vim/google/google.vim
-
 " Plugin configuration.
 " See http://google3/devtools/editors/vim/examples/ for example configurations
 " and http://go/vim/plugins for more information about vim plugins at Google.
