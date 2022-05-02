@@ -67,8 +67,9 @@ function git_lines_contributed() {
 	git log --author="$1" --pretty=tformat: --numstat | awk '{ add += $1; subs += $2; loc += $1 - $2 } END { printf "added lines: %s, removed lines: %s, total lines: %s\n", add, subs, loc }' -
 }
 function git_fake() {
-	read -p GIT_AUTHOR_NAME= NAME
-	read -p GIT_AUTHOR_EMAIL= EMAIL
+	echo "See also: # git commit --amend --author=\"Author Name <email@address.com>\""
+	read -p GIT_AUTHOR_NAME=NAME
+	read -p GIT_AUTHOR_EMAIL=EMAIL
 	export GIT_AUTHOR_NAME="$NAME"
 	export GIT_AUTHOR_EMAIL="$EMAIL"
 	export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
@@ -77,7 +78,7 @@ function git_fake() {
 function git_fake_date() {
 	echo "Use the format: 2015-08-20 13:26:15 +0600"
 	echo '    Also see git commit --amend --date="Wed Feb 16 14:00 2011 +0100"'
-	read -p GIT_AUTHOR_DATE= NEWDATE
+	read -p GIT_AUTHOR_DATE=NEWDATE
 	export GIT_AUTHOR_DATE="$NEWDATE"
 	export GIT_COMMITTER_DATE="$NEWDATE"
 }
@@ -105,8 +106,8 @@ function pushb() {
 		return 2
 	fi
 	local stack_file=$git_dir/.stack.txt
-	# read current branch                      current branch   remove *            Get hash if not on branch
-	local old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' -e 's/(HEAD detached at \([0-9a-f]\+\))/\1/')
+	#                  read current branch       current branch       remove *            Get hash/tag if not on branch
+	local old_branch=$(git branch 2> /dev/null | sed -e '/^[^*]/d' -e 's/* \(.*\)/\1/' -e 's/(HEAD detached at \([0-9\_\/\.\!\@\#\$\^&\*a-zA-Z\-]\+\))/\1/')
 	# if we are already on that branch
 	if [[ "$old_branch" == "$new_branch" ]]; then
 		return 0
@@ -145,6 +146,22 @@ function popb() {
 	sed -i '$ d' $stack_file
 	# output current stack
 	print_branch_stack
+}
+# calls pushb on the branch on the top of the stack
+function pushbpop() {
+	local git_dir=$(git rev-parse --git-dir 2> /dev/null)
+	if [[ -z "$git_dir" ]]; then
+    	echo "You are not in a git repo!"
+	    return 1
+	fi
+	local stack_file=$git_dir/.stack.txt
+	if [[ ! -f $stack_file || ! -s $stack_file ]]; then
+	    echo "There are no branches to pop!"
+	    return 2
+	fi
+	# get the branch at the top of the stack
+	local branch_name=$(tail -n1 $stack_file)
+	pushb $branch_name
 }
 function print_branch_stack() {
 	local git_dir=$(git rev-parse --git-dir 2> /dev/null)
@@ -330,18 +347,18 @@ function md() {
 	if [ $# != 1 ]; then
 		echo "Usage: md <dir>"
 	else
-		mkdir -p $1 && cd $1
+		mkdir -p "$1" && cd "$1"
 	fi
 }
 # displays amount of used RAM and swap
 #http://stackoverflow.com/questions/10585978/linux-command-for-percentage-of-memory-that-is-free
 function mem() {
         # +/-OS refers to what the Operating System is using for it's own caches (e.g. like disk cache) linuxatemyram.com
-        free | grep Mem | awk '{ printf("used(+OS): %.4f%\n", $3/$2 * 100.0) }'
-        free | head -n 3 | tail -n 1 | awk '{ printf("used(-OS): %.4f%\n", $3/($3+$4) * 100) }'
+        free | grep Mem | awk '{ printf("used(+OS): %.4f%%\n", $3/$2 * 100.0) }'
+        free | grep Mem | awk '{ printf("used(-OS): %.4f%%\n", $7/$2 * 100) }'
 }
 function swap() {
-	free | grep Swap | awk '{ printf("used: %.4f%\n", $3/$2 * 100.0) }'
+	free | grep Swap | awk '{ printf("used: %.4f%%\n", $3/$2 * 100.0) }'
 }
 function swap-processes() {
   {
@@ -380,7 +397,8 @@ function beer() {
 	echo -e " =\n/ \\\\\n) (\n[_]\nroot beer, get it?\n"
 }
 function group_by() {
-	awk -F_ '{A[$1$2]++}END{for (i in A) print i,A[i]}'
+	#awk -F_ '{A[$1$2]++}END{for (i in A) print i,A[i]}'
+	uniq -c
 }
 # Can just use <command> && exit
 function 0exit() {
@@ -401,7 +419,7 @@ function cmdline() {
   cat /proc/$1/cmdline | strings -1 | less -X -F
 }
 
-function countdown() {
+function countdown-old() {
   secs=$1
   while [ $secs -gt 0 ]; do
      echo -ne "$secs\033[0K\r"
@@ -410,29 +428,44 @@ function countdown() {
   done
 }
 
-function countdown2() {
+function countdown() {
   remaining_secs=$1
+  if [[ -z "$remaining_secs" ]]; then
+    echo "Must specify the number of seconds."
+    return 1
+  fi
   current_secs=$(date +%s)
   trigger_secs=$(expr $remaining_secs + $current_secs - 1)
   while [ $remaining_secs -gt 0 ]; do
-    echo -ne "$remaining_secs\033[0K\r"
+    #echo -ne "$remaining_secs\033[0K\r"
+    local display=$( displaytime $remaining_secs )
+    echo -ne "$display\033[0K\r"
     sleep 1
     remaining_secs=$(expr $trigger_secs - $current_secs)
     current_secs=$(date +%s)
   done
 }
+alias countdown2='echo "Use countdown now!" countdown'
+function jitter_sleep() {
+  sleep $[ ( $RANDOM % $2 )  + $1 ]
+}
+alias jitter=jitter_sleep
 
 function displaytime() {
-  SECONDS=$1
-  if [[ "$SECONDS" -gt "86400" ]]; then
-    echo "Number of seconds is greater than 1 day!"
-    return 1
-  fi
-  date -ud "@$SECONDS" +'%H hours %M minutes %S seconds'
+  local secs=$1
+  local D=$((secs/60/60/24))
+  local H=$((secs/60/60%24))
+  local M=$((secs/60%60))
+  local S=$((secs%60))
+  (( $D > 0 )) && printf '%d days ' $D
+  (( $H > 0 )) && printf '%d hours ' $H
+  (( $M > 0 )) && printf '%d minutes ' $M
+  (( $D > 0 || $H > 0 || $M > 0 )) && printf 'and '
+  printf '%d seconds\n' $S
 }
 
 function timer() {
-secs=$1
+  secs=$1
   while [ $secs -gt 0 ]; do
      formatted=$(displaytime $secs)
      echo -ne "$formatted\033[0K\r"
@@ -440,8 +473,22 @@ secs=$1
      : $((secs--))
   done
 }
+function waitforurl() {
+  echo "Waiting for $1 to return 200..."
+  local previous_status_code=0
+  while true; do
+    local new_status_code=$(curl -s -o /dev/null -w ''%{http_code}'' $1)
+    if [ "$new_status_code" -eq "200" ]; then
+      break;
+    elif [ "$new_status_code" -ne "$previous_status_code" ]; then
+      echo "Got different status code: $new_status_code"
+      previous_status_code=$new_status_code
+    fi	    
+    sleep 5
+  done
+}
 
 # https://github.com/andreafrancia/trash-cli/
-if type trash-put &> /dev/null; then
-  alias rm='echo "Use trash-put instead! (perma-delete with \rm or /bin/rm)"; false'
+if type trash &> /dev/null; then
+  alias rm='echo "Use trash instead! (perma-delete with \rm or /bin/rm)"; false'
 fi
