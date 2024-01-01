@@ -398,7 +398,7 @@ function beer() {
 }
 function group_by() {
 	#awk -F_ '{A[$1$2]++}END{for (i in A) print i,A[i]}'
-	uniq -c
+	sort | uniq -c | sort -n
 }
 # Can just use <command> && exit
 function 0exit() {
@@ -487,8 +487,14 @@ function waitforurl() {
     sleep 5
   done
 }
+# for use with bash prompt parsing
+function epoch_to_date() {
+  date -d "@${1}"
+}
+
 
 # https://github.com/andreafrancia/trash-cli/
 if type trash &> /dev/null; then
   alias rm='echo "Use trash instead! (perma-delete with \rm or /bin/rm)"; false'
 fi
+
