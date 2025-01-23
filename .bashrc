@@ -68,8 +68,8 @@ function git_lines_contributed() {
 }
 function git_fake() {
 	echo "See also: # git commit --amend --author=\"Author Name <email@address.com>\""
-	read -p GIT_AUTHOR_NAME=NAME
-	read -p GIT_AUTHOR_EMAIL=EMAIL
+	read -p GIT_AUTHOR_NAME NAME
+	read -p GIT_AUTHOR_EMAIL EMAIL
 	export GIT_AUTHOR_NAME="$NAME"
 	export GIT_AUTHOR_EMAIL="$EMAIL"
 	export GIT_COMMITTER_NAME="$GIT_AUTHOR_NAME"
@@ -78,7 +78,7 @@ function git_fake() {
 function git_fake_date() {
 	echo "Use the format: 2015-08-20 13:26:15 +0600"
 	echo '    Also see git commit --amend --date="Wed Feb 16 14:00 2011 +0100"'
-	read -p GIT_AUTHOR_DATE=NEWDATE
+	read -p GIT_AUTHOR_DATE NEWDATE
 	export GIT_AUTHOR_DATE="$NEWDATE"
 	export GIT_COMMITTER_DATE="$NEWDATE"
 }
