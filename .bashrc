@@ -6,10 +6,52 @@ alias cd..="cd .." # I often make this mistake
 # Because sometimes you don't have the time to put this two letters
 alias ..='cd ..'
 alias ...='cd ../..'
+# =screen=
+alias sl='screen -list'
+alias sr='screen -r'
+function shelp() {
+	echo "^a ?      help"
+	echo "^a S      horizontal split"
+	echo "^a |      verticle split"
+	echo "^a <tab>  next region"
+	echo "^a c      new window"
+	echo "^a n      next window"
+	echo "^a p      prev window"
+	echo "^a X      Close window"
+	echo "^u        Scrolls a half page up"
+	echo "^b        Scrolls a page up"
+	echo "^d        Scrolls a half page down"
+	echo "^f        Scrolls a page down"
+}
+
+# =misc=
+
+# process find
+#alias pf='ps aux | grep' #replaced by pgrep
+alias pf='echo "use pgrep -f"'
+
+# netstat find
+alias nf='netstat -tpna | grep'
+# Prevents accidentally overwriting files.
+alias mv='mv -i'
+# Pretty-print of some PATH variables:
+alias path='echo -e ${PATH//:/\\n}'
+alias fail='tail -f'
+
+# Shortcuts
+alias a='alias -p'
+alias e='vim' #edit
+alias h='history'
+alias j='jobs -l'
+alias p='less' #print
+alias t='less +G' # tail
+alias v='vim'
 # =git=
 # __git_complete broke :(
 function __git_complete() { :
 }
+alias g='git'
+__git_complete g _git
 alias ga='git add'
 __git_complete ga _git_add
 alias gb='git branch'
@@ -59,6 +101,9 @@ function gud() {
 	gst
 	gco $1
 	git pull origin $1
+}
+function cdg() {
+	cd $(git rev-parse --show-toplevel)
 }
 function gshno() {
 	gsh --name-only $1
@@ -178,70 +223,6 @@ function print_branch_stack() {
 }
 alias branches=print_branch_stack
 
-
-# =screen=
-alias sl='screen -list'
-alias sr='screen -r'
-function shelp() {
-	echo "^a ?      help"
-	echo "^a S      horizontal split"
-	echo "^a |      verticle split"
-	echo "^a <tab>  next region"
-	echo "^a c      new window"
-	echo "^a n      next window"
-	echo "^a p      prev window"
-	echo "^a X      Close window"
-	echo "^u        Scrolls a half page up"
-	echo "^b        Scrolls a page up"
-	echo "^d        Scrolls a half page down"
-	echo "^f        Scrolls a page down"
-}
-
-# =misc=
-
-# process find
-##alias pf='ps aux | grep'
-#replaced by pgrep
-alias pf='echo "use pgrep -f"'
-
-# netstat find
-alias nf='netstat -tpna | grep'
-
-# Prevents accidentally overwriting files.
-alias mv='mv -i'
-
-# Pretty-print of some PATH variables:
-alias path='echo -e ${PATH//:/\\n}'
-
-alias fail='tail -f'
-
-# Shortcuts
-alias a='alias -p'
-alias e='vim' #edit
-alias g='git'
-__git_complete g _git
-alias h='history'
-alias j='jobs -l'
-alias p='less' #print
-alias t='less +G' # tail
-alias v='vim'
-# find file name
-function f() {
-	find . -regex ".*${1}.*"
-}
-# find inside files
-function fi() {
-	grep -Hir "$1" .
-}
-# remove, tail
-function frail() {
-	if [ -f "$1" ]; then
-		rm  $1
-	fi
-	touch $1
-	tail -f $1
-}
-
 # Searches git commit messages
 function git_message_search() {
 	if [ $# -eq 1 ]; then
@@ -317,6 +298,7 @@ function hook_terminal_title_ps1(){
   echo '\[\e]0;${debian_chroot:+($debian_chroot)}\u@\h: \w\a\]'
 }
 
+# PROMPT_COMMAND runs a command before every prompt
 PROMPT_COMMAND=__prompt_command
 function __prompt_command() {
   PS1=$(exit_code_status)
@@ -332,7 +314,7 @@ function __prompt_command() {
   PS1="$(hook_terminal_title_ps1)$PS1"
 
   #ssh user@host
-  if is_sudoed; then
+  if is_remote_machine || is_sudoed; then
     PS1="\[\e[1;33m\]\u@\h\[\e[00m\] $PS1"
   fi
 }
@@ -340,8 +322,21 @@ function __prompt_command() {
 export EDITOR='vim'
 
 # ==Functions==
-function cdg() {
-	cd $(git rev-parse --show-toplevel)
+# find file name
+function f() {
+	find . -regex ".*${1}.*"
+}
+# find inside files
+function find-inside() {
+	grep -Hir "$1" .
+}
+# remove, tail
+function frail() {
+	if [ -f "$1" ]; then
+		rm  $1
+	fi
+	touch $1
+	tail -f $1
 }
 function md() {
 	if [ $# != 1 ]; then
@@ -497,4 +492,3 @@ function epoch_to_date() {
 if type trash &> /dev/null; then
   alias rm='echo "Use trash instead! (perma-delete with \rm or /bin/rm)"; false'
 fi
-
